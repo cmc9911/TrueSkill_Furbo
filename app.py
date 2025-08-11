@@ -203,8 +203,49 @@ if len(seleccionados) == 10:
         st.write(f"**Suma Portero:** {sum_portero_B:.2f}")
 
     st.markdown(f"**Probabilidad de victoria del Equipo A:** {probA:.2f}%")
+    import plotly.graph_objects as go
+
+    # --- Gráfico de radar de medias de atributos ---
+    atributos = ["Velocidad", "Resistencia", "Habilidad Técnica", "Defensa", "Ataque", "Regate", "Cuerpo"]
+    
+    media_A = df_atributos[df_atributos["Jugador"].isin(eq_A)][atributos].mean()
+    media_B = df_atributos[df_atributos["Jugador"].isin(eq_B)][atributos].mean()
+    
+    # Radar necesita cerrar el círculo, repetimos el primer valor
+    categorias = atributos + [atributos[0]]
+    valores_A = media_A.tolist() + [media_A.tolist()[0]]
+    valores_B = media_B.tolist() + [media_B.tolist()[0]]
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatterpolar(
+        r=valores_A,
+        theta=categorias,
+        fill='toself',
+        name='Equipo A',
+        line_color='blue'
+    ))
+    fig.add_trace(go.Scatterpolar(
+        r=valores_B,
+        theta=categorias,
+        fill='toself',
+        name='Equipo B',
+        line_color='red'
+    ))
+    
+    fig.update_layout(
+        polar=dict(
+            radialaxis=dict(visible=True, range=[0, 10])
+        ),
+        showlegend=True,
+        title="📊 Comparativa Media de Atributos"
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+
 elif len(seleccionados) > 0:
     st.warning("⚠ Debes seleccionar exactamente 10 jugadores.")
+
 
 
 
