@@ -123,7 +123,10 @@ def equipos_balanceados(jugadores, df_atributos, tamaño=5, equilibrar_portero=F
 # ============================
 st.title("⚽ Balanceador de Equipos con TrueSkill + Stats + Portero")
 
-archivo = st.file_uploader("Sube el archivo Excel con partidos y atributos", type=["xlsx"])
+url = "https://raw.githubusercontent.com/cmc9911/TrueSkill_Furbo/main/datos_futbol.xlsx"
+    st.session_state.data = pd.read_excel(url)
+
+archivo = st.session_state.data
 
 if archivo:
     df_partidos = pd.read_excel(archivo, sheet_name="partidos")
@@ -216,3 +219,4 @@ if archivo:
         st.markdown(f"**Probabilidad de victoria del Equipo A:** {probA:.2f}%")
     elif len(seleccionados) > 0:
         st.warning("⚠ Debes seleccionar exactamente 10 jugadores.")
+
