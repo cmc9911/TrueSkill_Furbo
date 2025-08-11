@@ -116,6 +116,7 @@ st.title("⚽ Balanceador de Equipos con TrueSkill + Stats + Portero")
 ruta_excel = "datos_futbol.xlsx"
 df_partidos = pd.read_excel(ruta_excel, sheet_name="partidos")
 df_atributos = pd.read_excel(ruta_excel, sheet_name="atributos")
+df_analisis = pd.read_excel(ruta_excel, sheet_name="analisis")
 
 # Inicializar ratings
 inicializar_ratings(df_atributos)
@@ -175,6 +176,7 @@ if len(seleccionados) == 10:
                                      peso_portero=peso_portero)
     probA = prob_victoria(eq_A, eq_B) * 100
     portero_map = dict(zip(df_atributos["Jugador"], df_atributos["Portero"]))
+    winrate_map = dict(zip(df_analisis["Jugador"], df_analisis["Ratio de victorias"]))
 
     sum_mu_A = sum(ratings[j].mu for j in eq_A)
     sum_mu_B = sum(ratings[j].mu for j in eq_B)
@@ -187,7 +189,8 @@ if len(seleccionados) == 10:
         st.table(pd.DataFrame({
             "Jugador": eq_A,
             "μ": [ratings[j].mu for j in eq_A],
-            "Portero": [portero_map.get(j, 0) for j in eq_A]
+            "Portero": [portero_map.get(j, 0) for j in eq_A],
+            "Winrate": [winrate_map.get(j, 0) for j in eq_A]
         }))
         st.write(f"**Suma μ:** {sum_mu_A:.2f}")
         st.write(f"**Suma Portero:** {sum_portero_A:.2f}")
@@ -246,6 +249,7 @@ if len(seleccionados) == 10:
 
 elif len(seleccionados) > 0:
     st.warning("⚠ Debes seleccionar exactamente 10 jugadores.")
+
 
 
 
