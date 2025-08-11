@@ -123,35 +123,34 @@ def equipos_balanceados(jugadores, df_atributos, tamaño=5, equilibrar_portero=F
 # ============================
 st.title("⚽ Balanceador de Equipos con TrueSkill + Stats + Portero")
 
-url = "https://raw.githubusercontent.com/cmc9911/TrueSkill_Furbo/main/datos_futbol.xlsx"
-st.session_state.data = pd.read_excel(url)
+# Cargar directamente desde archivo en el repo
+ruta_excel = "datos_futbol.xlsx"  # nombre del archivo en el repositorio
+df_partidos = pd.read_excel(ruta_excel, sheet_name="partidos")
+df_atributos = pd.read_excel(ruta_excel, sheet_name="atributos")
 
-archivo = st.session_state.data
+df_partidos = pd.read_excel(archivo, sheet_name="partidos")
+df_atributos = pd.read_excel(archivo, sheet_name="atributos")
 
-if archivo is not None:
-    df_partidos = pd.read_excel(archivo, sheet_name="partidos")
-    df_atributos = pd.read_excel(archivo, sheet_name="atributos")
+# Inicializar ratings
+inicializar_ratings(df_atributos)
 
-    # Inicializar ratings
-    inicializar_ratings(df_atributos)
+# Procesar partidos históricos
+for partido_id, datos_partido in df_partidos.groupby("Partido"):
+    equipo_A = datos_partido[datos_partido["Equipo"] == "A"]["Jugador"].tolist()
+    equipo_B = datos_partido[datos_partido["Equipo"] == "B"]["Jugador"].tolist()
 
-    # Procesar partidos históricos
-    for partido_id, datos_partido in df_partidos.groupby("Partido"):
-        equipo_A = datos_partido[datos_partido["Equipo"] == "A"]["Jugador"].tolist()
-        equipo_B = datos_partido[datos_partido["Equipo"] == "B"]["Jugador"].tolist()
+    goles_equipo_A = datos_partido[datos_partido["Equipo"] == "A"]["Goles"].sum()
+    goles_equipo_B = datos_partido[datos_partido["Equipo"] == "B"]["Goles"].sum()
+    goles_dict = dict(zip(datos_partido["Jugador"], datos_partido["Goles"]))
 
-        goles_equipo_A = datos_partido[datos_partido["Equipo"] == "A"]["Goles"].sum()
-        goles_equipo_B = datos_partido[datos_partido["Equipo"] == "B"]["Goles"].sum()
-        goles_dict = dict(zip(datos_partido["Jugador"], datos_partido["Goles"]))
-
-        if goles_equipo_A > goles_equipo_B:
-            resultado = 1
-        elif goles_equipo_A < goles_equipo_B:
-            resultado = -1
-        else:
-            resultado = 0
-
-        actualizar_partido(equipo_A, equipo_B, resultado, goles_dict, goles_equipo_A, goles_equipo_B)
+    if goles_equipo_A > goles_equipo_B:
+        resultado = 1
+    elif goles_equipo_A < goles_equipo_B:
+        resultado = -1
+    else:
+        resultado = 0
+    
+    actualizar_partido(equipo_A, equipo_B, resultado, goles_dict, goles_equipo_A, goles_equipo_B)
 
     # Mostrar ratings
     st.subheader("📊 Ratings actuales")
@@ -219,6 +218,7 @@ if archivo is not None:
         st.markdown(f"**Probabilidad de victoria del Equipo A:** {probA:.2f}%")
     elif len(seleccionados) > 0:
         st.warning("⚠ Debes seleccionar exactamente 10 jugadores.")
+
 
 
 
