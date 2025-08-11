@@ -15,10 +15,8 @@ ratings = {}
 def get_rating(jugador):
     return ratings.get(jugador, env.create_rating())
 
-
-
 def atributos_a_mu(row):
-    # Definir las ponderaciones sin que sumen necesariamente 1
+    # Ponderaciones (no necesitan sumar 1)
     pesos = {
         "Velocidad": 0.2,
         "Resistencia": 0.3,
@@ -29,13 +27,8 @@ def atributos_a_mu(row):
         "Cuerpo": 0.1,
     }
     suma_pesos = sum(pesos.values())
-    
-    mu = 0
-    for atributo, peso in pesos.items():
-        mu += row[atributo] * (peso / suma_pesos)
-        
-    return mu * 5
-
+    mu = sum(row[atributo] * (peso / suma_pesos) for atributo, peso in pesos.items())
+    return mu * 5  # Escala para que valores iniciales estén en rango TrueSkill
 
 def inicializar_ratings(df_atributos):
     for _, row in df_atributos.iterrows():
@@ -58,6 +51,7 @@ def actualizar_partido(equipo_A, equipo_B, resultado, goles_dict, goles_equipo_A
     for j, r in zip(equipo_B, nuevos_B):
         ratings[j] = r
 
+    # Ajuste adicional por goles
     ajuste_gol_equipo = 0.5
     ajuste_contra = 0.5
     ajuste_gol = 0.2
@@ -84,14 +78,11 @@ def prob_victoria(equipo_A, equipo_B):
     diff = mu_A - mu_B
     return 1 / (1 + 10 ** (-diff / 400))
 
-# --- Función modificada para balancear equipos considerando portero ---
 def equipos_balanceados(jugadores, df_atributos, tamaño=5, equilibrar_portero=False, peso_portero=0.3):
     mejor_diff = float("inf")
     mejor_equipo = None
 
     portero_map = dict(zip(df_atributos["Jugador"], df_atributos["Portero"]))
-
-    # Escalas para normalizar
     max_mu = max(ratings[j].mu for j in jugadores)
     max_portero = max(portero_map.get(j, 0) for j in jugadores)
 
@@ -106,8 +97,6 @@ def equipos_balanceados(jugadores, df_atributos, tamaño=5, equilibrar_portero=F
             portero_A = sum(portero_map.get(j, 0) for j in equipo_A)
             portero_B = sum(portero_map.get(j, 0) for j in equipo_B)
             diff_portero = abs(portero_A - portero_B) / max_portero if max_portero > 0 else 0
-
-            # Ponderamos la diferencia total
             diff_total = diff_mu * (1 - peso_portero) + diff_portero * peso_portero
         else:
             diff_total = diff_mu
@@ -123,8 +112,8 @@ def equipos_balanceados(jugadores, df_atributos, tamaño=5, equilibrar_portero=F
 # ============================
 st.title("⚽ Balanceador de Equipos con TrueSkill + Stats + Portero")
 
-# Cargar directamente desde archivo en el repo
-ruta_excel = "datos_futbol.xlsx"  # nombre del archivo en el repositorio
+# Cargar datos desde archivo en el repo
+ruta_excel = "datos_futbol.xlsx"
 df_partidos = pd.read_excel(ruta_excel, sheet_name="partidos")
 df_atributos = pd.read_excel(ruta_excel, sheet_name="atributos")
 
@@ -135,7 +124,6 @@ inicializar_ratings(df_atributos)
 for partido_id, datos_partido in df_partidos.groupby("Partido"):
     equipo_A = datos_partido[datos_partido["Equipo"] == "A"]["Jugador"].tolist()
     equipo_B = datos_partido[datos_partido["Equipo"] == "B"]["Jugador"].tolist()
-
     goles_equipo_A = datos_partido[datos_partido["Equipo"] == "A"]["Goles"].sum()
     goles_equipo_B = datos_partido[datos_partido["Equipo"] == "B"]["Goles"].sum()
     goles_dict = dict(zip(datos_partido["Jugador"], datos_partido["Goles"]))
@@ -149,72 +137,72 @@ for partido_id, datos_partido in df_partidos.groupby("Partido"):
     
     actualizar_partido(equipo_A, equipo_B, resultado, goles_dict, goles_equipo_A, goles_equipo_B)
 
-    # Mostrar ratings
-    st.subheader("📊 Ratings actuales")
-    df_ratings = pd.DataFrame([
-        {"Jugador": j, "μ (Media)": r.mu, "σ (±)": r.sigma}
-        for j, r in ratings.items()
-    ])
+# ============================
+# MOSTRAR RATINGS
+# ============================
+st.subheader("📊 Ratings actuales")
+df_ratings = pd.DataFrame([
+    {"Jugador": j, "μ (Media)": r.mu, "σ (±)": r.sigma}
+    for j, r in ratings.items()
+])
+df_portero = df_atributos[["Jugador", "Portero"]]
+df_completo = pd.merge(df_ratings, df_portero, on="Jugador", how="left")
+df_completo = df_completo.sort_values(by="μ (Media)", ascending=False)
+st.dataframe(df_completo, use_container_width=True)
 
+# ============================
+# SELECCIÓN DE JUGADORES
+# ============================
+seleccionados = st.multiselect(
+    "Selecciona exactamente 10 jugadores",
+    list(ratings.keys()),
+    max_selections=10
+)
 
-    # Seleccionar solo la columna 'Jugador' y 'Portero' de df_atributos
-    df_portero = df_atributos[["Jugador", "Portero"]]
+equilibrar_portero = st.checkbox("Equilibrar nivel de portero")
+peso_portero = 0.3
+if equilibrar_portero:
+    peso_portero = st.slider("Peso portero en equilibrio", 0.0, 1.0, 0.3, 0.05)
 
-    # Hacer merge con df_atributos para añadir estadísticas
-    df_completo = pd.merge(df_ratings, df_portero, on="Jugador", how="left")
+# ============================
+# BALANCEAR EQUIPOS
+# ============================
+if len(seleccionados) == 10:
+    eq_A, eq_B = equipos_balanceados(seleccionados, df_atributos, tamaño=5,
+                                     equilibrar_portero=equilibrar_portero,
+                                     peso_portero=peso_portero)
+    probA = prob_victoria(eq_A, eq_B) * 100
+    portero_map = dict(zip(df_atributos["Jugador"], df_atributos["Portero"]))
 
-    # Ordenar por μ para mostrar los mejores arriba
-    df_completo = df_completo.sort_values(by="μ (Media)", ascending=False)
-    
-    # Mostrar tabla completa con stats + ratings
-    st.dataframe(df_completo, use_container_width=True)
+    sum_mu_A = sum(ratings[j].mu for j in eq_A)
+    sum_mu_B = sum(ratings[j].mu for j in eq_B)
+    sum_portero_A = sum(portero_map.get(j, 0) for j in eq_A)
+    sum_portero_B = sum(portero_map.get(j, 0) for j in eq_B)
 
-    # Selector de jugadores
-    seleccionados = st.multiselect("Selecciona exactamente 10 jugadores", list(ratings.keys()), max_selections=10)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("### 🟦 Equipo A")
+        st.table(pd.DataFrame({
+            "Jugador": eq_A,
+            "μ": [ratings[j].mu for j in eq_A],
+            "Portero": [portero_map.get(j, 0) for j in eq_A]
+        }))
+        st.write(f"**Suma μ:** {sum_mu_A:.2f}")
+        st.write(f"**Suma Portero:** {sum_portero_A:.2f}")
 
-    # Toggle y slider para portero
-    equilibrar_portero = st.checkbox("Equilibrar nivel de portero")
-    peso_portero = 0.3
-    if equilibrar_portero:
-        peso_portero = st.slider("Peso portero en equilibrio", min_value=0.0, max_value=1.0, value=0.3, step=0.05)
+    with col2:
+        st.markdown("### 🟥 Equipo B")
+        st.table(pd.DataFrame({
+            "Jugador": eq_B,
+            "μ": [ratings[j].mu for j in eq_B],
+            "Portero": [portero_map.get(j, 0) for j in eq_B]
+        }))
+        st.write(f"**Suma μ:** {sum_mu_B:.2f}")
+        st.write(f"**Suma Portero:** {sum_portero_B:.2f}")
 
-    if len(seleccionados) == 10:
-        eq_A, eq_B = equipos_balanceados(seleccionados, df_atributos, tamaño=5,
-                                         equilibrar_portero=equilibrar_portero,
-                                         peso_portero=peso_portero)
-        probA = prob_victoria(eq_A, eq_B) * 100
-
-        portero_map = dict(zip(df_atributos["Jugador"], df_atributos["Portero"]))
-        sum_mu_A = sum(ratings[j].mu for j in eq_A)
-        sum_mu_B = sum(ratings[j].mu for j in eq_B)
-        sum_portero_A = sum(portero_map.get(j, 0) for j in eq_A)
-        sum_portero_B = sum(portero_map.get(j, 0) for j in eq_B)
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.markdown("### 🟦 Equipo A")
-            st.table(pd.DataFrame({
-                "Jugador": eq_A,
-                "μ": [ratings[j].mu for j in eq_A],
-                "Portero": [portero_map.get(j, 0) for j in eq_A]
-            }))
-            st.write(f"**Suma μ:** {sum_mu_A:.2f}")
-            st.write(f"**Suma Portero:** {sum_portero_A:.2f}")
-
-        with col2:
-            st.markdown("### 🟥 Equipo B")
-            st.table(pd.DataFrame({
-                "Jugador": eq_B,
-                "μ": [ratings[j].mu for j in eq_B],
-                "Portero": [portero_map.get(j, 0) for j in eq_B]
-            }))
-            st.write(f"**Suma μ:** {sum_mu_B:.2f}")
-            st.write(f"**Suma Portero:** {sum_portero_B:.2f}")
-
-        st.markdown(f"**Probabilidad de victoria del Equipo A:** {probA:.2f}%")
-    elif len(seleccionados) > 0:
-        st.warning("⚠ Debes seleccionar exactamente 10 jugadores.")
+    st.markdown(f"**Probabilidad de victoria del Equipo A:** {probA:.2f}%")
+elif len(seleccionados) > 0:
+    st.warning("⚠ Debes seleccionar exactamente 10 jugadores.")
 
 
 
