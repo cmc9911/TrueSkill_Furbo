@@ -157,9 +157,11 @@ seleccionados = st.multiselect(
     "Selecciona exactamente 10 jugadores",
     list(ratings.keys()),
     max_selections=10
+    key="seleccion_jugadores"
 )
 
-equilibrar_portero = st.checkbox("Equilibrar nivel de portero")
+equilibrar_portero = st.checkbox("Equilibrar nivel de portero",
+                     key="equilibrar_portero_toggle")
 peso_portero = 0.3
 if equilibrar_portero:
     peso_portero = st.slider("Peso portero en equilibrio", 0.0, 1.0, 0.3, 0.05)
@@ -203,6 +205,7 @@ if len(seleccionados) == 10:
     st.markdown(f"**Probabilidad de victoria del Equipo A:** {probA:.2f}%")
 elif len(seleccionados) > 0:
     st.warning("⚠ Debes seleccionar exactamente 10 jugadores.")
+
 
 
 
