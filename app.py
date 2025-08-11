@@ -200,7 +200,8 @@ if len(seleccionados) == 10:
         st.table(pd.DataFrame({
             "Jugador": eq_B,
             "μ": [ratings[j].mu for j in eq_B],
-            "Portero": [portero_map.get(j, 0) for j in eq_B]
+            "Portero": [portero_map.get(j, 0) for j in eq_B],
+            "Winrate": [winrate_map.get(j, 0) for j in eq_B]
         }))
         st.write(f"**Suma μ:** {sum_mu_B:.2f}")
         st.write(f"**Suma Portero:** {sum_portero_B:.2f}")
@@ -249,6 +250,7 @@ if len(seleccionados) == 10:
 
 elif len(seleccionados) > 0:
     st.warning("⚠ Debes seleccionar exactamente 10 jugadores.")
+
 
 
 
