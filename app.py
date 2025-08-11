@@ -128,9 +128,6 @@ ruta_excel = "datos_futbol.xlsx"  # nombre del archivo en el repositorio
 df_partidos = pd.read_excel(ruta_excel, sheet_name="partidos")
 df_atributos = pd.read_excel(ruta_excel, sheet_name="atributos")
 
-df_partidos = pd.read_excel(archivo, sheet_name="partidos")
-df_atributos = pd.read_excel(archivo, sheet_name="atributos")
-
 # Inicializar ratings
 inicializar_ratings(df_atributos)
 
@@ -218,6 +215,7 @@ for partido_id, datos_partido in df_partidos.groupby("Partido"):
         st.markdown(f"**Probabilidad de victoria del Equipo A:** {probA:.2f}%")
     elif len(seleccionados) > 0:
         st.warning("⚠ Debes seleccionar exactamente 10 jugadores.")
+
 
 
 
