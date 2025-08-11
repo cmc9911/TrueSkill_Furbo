@@ -110,7 +110,7 @@ def equipos_balanceados(jugadores, df_atributos, tamaño=5, equilibrar_portero=F
 # ============================
 # APP STREAMLIT
 # ============================
-st.title("⚽ Balanceador de Equipos con TrueSkill + Stats + Portero")
+st.title("⚽ Balanceador de Equipos con TrueSkill + Stats")
 
 # Cargar datos desde archivo en el repo
 ruta_excel = "datos_futbol.xlsx"
@@ -250,6 +250,7 @@ if len(seleccionados) == 10:
 
 elif len(seleccionados) > 0:
     st.warning("⚠ Debes seleccionar exactamente 10 jugadores.")
+
 
 
 
