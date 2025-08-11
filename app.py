@@ -156,7 +156,7 @@ st.dataframe(df_completo, use_container_width=True)
 seleccionados = st.multiselect(
     "Selecciona exactamente 10 jugadores",
     list(ratings.keys()),
-    max_selections=10
+    max_selections=10,
     key="seleccion_jugadores"
 )
 
@@ -246,6 +246,7 @@ if len(seleccionados) == 10:
 
 elif len(seleccionados) > 0:
     st.warning("⚠ Debes seleccionar exactamente 10 jugadores.")
+
 
 
 
