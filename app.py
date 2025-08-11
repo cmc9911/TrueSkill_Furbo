@@ -128,7 +128,7 @@ st.session_state.data = pd.read_excel(url)
 
 archivo = st.session_state.data
 
-if archivo:
+if archivo is not None:
     df_partidos = pd.read_excel(archivo, sheet_name="partidos")
     df_atributos = pd.read_excel(archivo, sheet_name="atributos")
 
@@ -219,5 +219,6 @@ if archivo:
         st.markdown(f"**Probabilidad de victoria del Equipo A:** {probA:.2f}%")
     elif len(seleccionados) > 0:
         st.warning("⚠ Debes seleccionar exactamente 10 jugadores.")
+
 
 
