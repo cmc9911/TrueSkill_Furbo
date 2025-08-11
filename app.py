@@ -203,6 +203,7 @@ if len(seleccionados) == 10:
         st.write(f"**Suma Portero:** {sum_portero_B:.2f}")
 
     st.markdown(f"**Probabilidad de victoria del Equipo A:** {probA:.2f}%")
+    
     import plotly.graph_objects as go
 
     # --- Gráfico de radar de medias de atributos ---
@@ -245,6 +246,7 @@ if len(seleccionados) == 10:
 
 elif len(seleccionados) > 0:
     st.warning("⚠ Debes seleccionar exactamente 10 jugadores.")
+
 
 
 
